@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Searching Visualizer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #10c26ff7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      margin-top: 1rem;
+      color: #e70d56;
+      border-top: 7px solid rgb(60, 13, 250);
+      border-bottom: 7px solid rgb(60, 13, 250);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin: 1rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    select, button, input {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #c92c34;
+      color: white;
+    }
+
+    button:hover {
+      background-color: #c92c34;
+    }
+
+    #bars-container {
+      display: flex;
+      align-items: flex-end;
+      height: 400px;
+      width: 90%;
+      max-width: 1000px;
+      border: 1px solid #ccc;
+      background: white;
+      margin-top: 2rem;
+      position: relative;
+    }
+
+    .bar {
+      flex: 1;
+      margin: 0 2px;
+      background-color: #3498db;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .bar span {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.75rem;
+    }
+
+    .comparing {
+      background-color: #f39c12 !important;
+    }
+
+    .found {
+      background-color: #2ecc71 !important;
+    }
+
+    .low {
+      background-color: #9b59b6 !important;
+    }
+
+    .high {
+      background-color: #e67e22 !important;
+    }
+
+    .mid {
+      background-color: #1abc9c !important;
+    }
+
+    .speed-control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.9rem;
+    }
+
+    .speed-control input {
+      width: 150px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Searching Visualizer</h1>
+
+  <div class="controls">
+    <select id="searchAlgo">
+      <option value="linear">Linear Search</option>
+      <option value="binary">Binary Search</option>
+    </select>
+
+    <input type="text" id="arrayInput" placeholder="e.g. 5,1,4,2,8" />
+    <input type="number" id="searchKey" placeholder="Key to search" />
+
+    <button onclick="useInputArray()">Use Array</button>
+    <button onclick="generateRandomArray()">Generate Random</button>
+    <button onclick="startSearch()">Start Search</button>
+
+    <div class="speed-control">
+      <label for="speedRange">Speed</label>
+      <input type="range" id="speedRange" min="50" max="3000" value="300" />
+      <div>
+        <span>Faster</span> — <span>Slower</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="bars-container"></div>
+
+  <script>
+    let bars = [];
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function getDelay() {
+      return +document.getElementById("speedRange").value;
+    }
+
+    function clearHighlights() {
+      bars.forEach(bar => bar.className = 'bar');
+    }
+
+    function generateRandomArray() {
+      const container = document.getElementById("bars-container");
+      container.innerHTML = "";
+      bars = [];
+      for (let i = 0; i < 20; i++) {
+        const value = Math.floor(Math.random() * 100) + 1;
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = `${value * 3}px`;
+        bar.dataset.value = value;
+        bar.innerHTML = `<span>${value}</span>`;
+        container.appendChild(bar);
+        bars.push(bar);
+      }
+    }
+
+    function useInputArray() {
+      const input = document.getElementById("arrayInput").value.trim();
+      const arr = input.split(',').map(Number).filter(x => !isNaN(x) && x > 0);
+      if (arr.length === 0) return alert("Enter a valid array!");
+      const container = document.getElementById("bars-container");
+      container.innerHTML = "";
+      bars = [];
+      arr.forEach(value => {
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.style.height = `${value * 3}px`;
+        bar.dataset.value = value;
+        bar.innerHTML = `<span>${value}</span>`;
+        container.appendChild(bar);
+        bars.push(bar);
+      });
+    }
+
+    async function linearSearch(key) {
+      const delay = getDelay();
+      for (let i = 0; i < bars.length; i++) {
+        clearHighlights();
+        bars[i].classList.add("comparing");
+        await sleep(delay);
+        if (+bars[i].dataset.value === key) {
+          bars[i].classList.remove("comparing");
+          bars[i].classList.add("found");
+          return;
+        }
+      }
+      alert("Element not found");
+    }
+
+    async function binarySearch(key) {
+      const delay = getDelay();
+      let arr = bars.map(bar => +bar.dataset.value);
+      if (!isSorted(arr)) {
+        alert("Binary Search needs a sorted array. Please enter sorted input.");
+        return;
+      }
+
+      let low = 0, high = arr.length - 1;
+      while (low <= high) {
+        clearHighlights();
+        bars[low].classList.add("low");
+        bars[high].classList.add("high");
+        const mid = Math.floor((low + high) / 2);
+        bars[mid].classList.add("mid");
+        await sleep(delay);
+
+        if (arr[mid] == key) {
+          bars[mid].classList.remove("mid");
+          bars[mid].classList.add("found");
+          return;
+        }
+        else if (arr[mid] < key) {
+          low = mid + 1;
+        }
+        else {
+          high = mid - 1;
+        }
+      }
+      alert("Element not found");
+    }
+
+    function isSorted(arr) {
+      for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i] > arr[i + 1]) return false;
+      }
+      return true;
+    }
+
+    async function startSearch() {
+      const algo = document.getElementById("searchAlgo").value;
+      const key = parseInt(document.getElementById("searchKey").value);
+      if (isNaN(key)) return alert("Enter a valid key to search");
+      clearHighlights();
+      if (algo === "linear") await linearSearch(key);
+      else await binarySearch(key);
+    }
+
+    generateRandomArray();
+  </script>
+</body>
+</html>

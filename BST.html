@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Binary Search Tree Visualizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600&family=Quantico:wght@700&family=Exo+2:wght@700&family=Share+Tech+Mono&family=Poppins:wght@600&family=Rubik:wght@600&family=Fira+Sans:wght@600&family=Work+Sans:wght@600&family=Barlow+Condensed:wght@700&family=Merriweather:wght@700&family=Libre+Baskerville:wght@700&family=IBM+Plex+Sans:wght@700&family=Lora:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      text-align: center;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .quantico { 
+      font-family: 'Quantico', sans-serif;
+      font-size: 3rem;
+      color: rgb(240, 110, 29);
+      text-shadow: 2.5px 2.5px 7px rgba(62, 190, 218, 0.76);
+      border-top: 7px solid #23e0b1;
+      border-bottom: 7px solid #23e0b1;
+      margin-left: 200px;
+      margin-right: 200px;
+    }
+
+
+    #treeContainer {
+      position: relative;
+      min-height: 800px;
+      padding-top: 60px;
+    }
+    
+    .node {
+      position: absolute;
+      background-color: #2e86de;
+      color: white;
+      padding: 10px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.5s;
+      z-index: 2;
+    }
+    .line {
+      position: absolute;
+      background-color: #a9f993;
+      transform-origin: 0 0;
+      height: 2px;
+      z-index: 1;
+    }
+    .highlight {
+      background-color: #ff1744 !important;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .box{
+      border-radius: 25px;
+      border-width: 0px;
+
+    }
+    .button{
+      border-radius: 25px;
+      border-width: 0px;
+      background-color:rgb(11, 141, 115);
+    }
+  </style>
+</head>
+<body style="background-image:url(https://wallpapers.com/images/hd/dusky-art-macos-monterey-twp75tnq446hrmlj.jpg) ; ">
+  <h1 class="quantico">Binary Search Tree Visualizer</h1>
+  <input type="number" id="nodeValue" placeholder="Enter value" class="box">
+  <button onclick="startInsert()" class="button">Insert Node</button>
+  <div id="treeContainer"></div>
+
+  <script>
+    class TreeNode {
+      constructor(value, x, y) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+        this.x = x;
+        this.y = y;
+        this.element = null;
+      }
+    }
+
+    let root = null;
+    const treeContainer = document.getElementById("treeContainer");
+    const spacingY = 100;
+    const delay = 1000;
+
+    async function startInsert() {
+      const value = parseInt(document.getElementById("nodeValue").value);
+      if (isNaN(value)) return;
+      document.getElementById("nodeValue").value = "";
+      clearHighlights();
+      root = await insert(root, value, window.innerWidth / 2, 60, null, window.innerWidth / 4);
+    }
+
+    async function insert(node, value, x, y, parent, offsetX) {
+      if (!node) {
+        const newNode = new TreeNode(value, x, y);
+        renderNode(newNode, parent);
+        return newNode;
+      }
+
+      highlight(node);
+      await new Promise(r => setTimeout(r, delay));
+
+      if (value < node.value) {
+        node.left = await insert(node.left, value, x - offsetX, y + spacingY, node, offsetX / 2);
+      } else if (value > node.value) {
+        node.right = await insert(node.right, value, x + offsetX, y + spacingY, node, offsetX / 2);
+      }
+
+      return node;
+    }
+
+    function highlight(node) {
+      if (node.element) {
+        node.element.classList.add("highlight");
+      }
+    }
+
+    function clearHighlights() {
+      document.querySelectorAll('.highlight').forEach(el => {
+        el.classList.remove('highlight');
+      });
+    }
+
+    function renderNode(node, parent) {
+      const div = document.createElement("div");
+      div.className = "node";
+      div.innerText = node.value;
+      div.style.left = `${node.x - 20}px`;
+      div.style.top = `${node.y}px`;
+      node.element = div;
+      treeContainer.appendChild(div);
+
+      if (parent) {
+        const line = document.createElement("div");
+        line.className = "line";
+
+        const x1 = parent.x;
+        const y1 = parent.y + 20;
+        const x2 = node.x;
+        const y2 = node.y;
+        const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+
+        line.style.width = `${length}px`;
+        line.style.left = `${x1}px`;
+        line.style.top = `${y1}px`;
+        line.style.transform = `rotate(${angle}deg)`;
+
+        treeContainer.appendChild(line);
+      }
+    }
+  </script>
+</body>
+</html>
